@@ -9,8 +9,17 @@ import time
 
 class DopplerEst(ChannelModel):
 
-    def __init__(self, l, n_static, snr):
-        super().__init__(l=l, n_static=n_static[-1], snr=snr)
+    def __init__(self, l:float, n_static:list, snr:list, interval:list):
+        """
+            l: wavelength [m],
+            n_static: list of numbers of available static paths,
+            snr: list of SNR values [dB],
+            interval: list of interval values [ms].
+        """
+        super().__init__(l=l, n_static=n_static[-1], snr=snr[-1])
+        self.snr_list = snr
+        self.n_static_list = n_static
+        self.interval_list = interval
 
     def get_phases(self, h, init=False, from_index= True, plot=False):
         """
@@ -118,13 +127,21 @@ class DopplerEst(ChannelModel):
         return phases
     
     def get_phase_diff(self, interval):
+        """
+            computes phase differences and AoAs, and averages them across interval.
+
+            interval: coherence interval length in [ms].
+
+            returns mean phase differences and AoAs.
+        """
+        interval = int(interval*1e-3/self.T)
         phase_diff = []
         self.k = 0
         h = self.get_cir_est(init=True, k=self.k)
         self.get_phases(h, init=True)
         for p in range(1,len(self.phases[:,1])):
                 self.phases[p,1] = self.phases[p,1] - self.phases[0,1]
-        AoA = [self.paths['AoA'][1:] + np.random.normal(0,self.AoAstd,self.n_static+1)]
+        AoA = []#[self.paths['AoA'][1:] + np.random.normal(0,self.AoAstd,self.n_static+1)]
         for i in range(1,interval):
             self.k = i
             h = self.get_cir_est(init=False, k=self.k)
@@ -143,16 +160,53 @@ class DopplerEst(ChannelModel):
         AoA = np.stack(AoA,axis=0)
         return phase_diff, AoA
 
-    def simulation(self, N, snr, interval, n_static, aoa):
+    def simulation(self, path:str, N:int, aoa:list=[5,3,1], save=True, relative=True, save_all=False):
+        """
+            perform the simulation varying all the available parameters.
+            
+            path: path to save the results,
+            N: number of iterations per set of parameters,
+            aoa: AoA std values in degrees,
+            save: wether to save the results,
+            relative: wether to monitor normalized results (otherwhise the absolute value will be saved),
+            save_all: wether to save fD, eta and speed errors (otherwise just fD errors will be saved).
+
+            returns the array tot_fd_error_rel with shape (N, len(self.snr_list), len(aoa), len(self.interval_list), len(self.n_static_list)).
+        """
+        tot_fd_error_rel = []
+        tot_eta_error_rel = []
+        tot_v_error_rel = []
+        tot_fd_error_abs = []
+        tot_eta_error_abs = []
+        tot_v_error_abs = []
+        
         nls_time = []
         for j in range(N):
             print("iteration: ", j, end="\r")
-            for s in snr:
+            fd_error_rel = []
+            eta_error_rel = []
+            v_error_rel = []
+            fd_error_abs = []
+            eta_error_abs = []
+            v_error_abs = []
+            for s in self.snr_list:
                 self.SNR = s
+                a_fd_err_rel = []
+                a_eta_err_rel = []
+                a_v_err_rel = []
+                a_fd_err_abs = []
+                a_eta_err_abs = []
+                a_v_err_abs = []
                 for a in aoa:
                     self.AoAstd = np.deg2rad(a)
-                    phase_diff, AoA = self.get_phase_diff(interval[-1])
-                    for inter in interval: # interval in decreasing order
+                    phase_diff, AoA = self.get_phase_diff(self.interval_list[0])
+                    int_fd_err_rel = []
+                    int_eta_err_rel = []
+                    int_v_err_rel = []
+                    int_fd_err_abs = []
+                    int_eta_err_abs = []
+                    int_v_err_abs = []
+                    for inter in self.interval_list: # interval in decreasing order
                         inter = int(inter*1e-3/self.T)
                         AoA = AoA[:inter]
                         phase_diff = phase_diff[:inter]
@@ -175,11 +229,134 @@ class DopplerEst(ChannelModel):
                             x0 = [f_d, v, eta]
                             x0 = self.check_initial_values(x0)
 
-                        npath_err = []
+                        fd_err_rel = []
+                        eta_err_rel = []
+                        v_err_rel = []
+                        fd_err_abs = []
+                        eta_err_abs = []
+                        v_err_abs = []
                         nls_t = []
-                        for k in n_static:
+                        # collect results for each number of available static paths (n_static)
+                        for k in self.n_static_list:
                             start = time.time()
-                            results = least_squares(self.system, x0, args=(phase_diff[:k+2], AoA[:k+2]))    
-                            nls_t.append(time.time()-start) 
-                            npath_err.append(abs((self.fd-np.mean(results.x[0]))/self.fd))   
+                            results = least_squares(self.system, x0, args=(mean_phase_diff[:k+2], mean_AoA[:k+2]))    
+                            nls_t.append(time.time()-start)
+                            if relative: 
+                                fd_err_rel.append(abs((self.fd-np.mean(results.x[0]))/self.fd))   
+                                if save_all:
+                                    eta_err_rel.append(abs((self.eta-np.mean(results.x[2]))/self.eta))
+                                    v_err_rel.append(abs((self.v_rx-np.mean(results.x[1]))/self.v_rx))
+                            else:
+                                fd_err_abs.append(abs((self.fd-np.mean(results.x[0]))/self.fd))   
+                                if save_all:
+                                    eta_err_abs.append(abs(np.rad2deg(self.eta)-np.rad2deg(np.mean(results.x[2]))))
+                                    v_err_abs.append(abs(self.v_rx-np.mean(results.x[1])))
                         nls_time.append(nls_t)
+
+                        # collect results for each interval length
+                        if relative:
+                            int_fd_err_rel.append(fd_err_rel)
+                            if save_all:
+                                int_eta_err_rel.append(eta_err_rel)
+                                int_v_err_rel.append(v_err_rel)
+                        else:
+                            int_fd_err_abs.append(fd_err_abs)
+                            if save_all:
+                                int_eta_err_abs.append(eta_err_abs)
+                                int_v_err_abs.append(v_err_abs)
+
+                    # collect results for each AoA std
+                    if relative:
+                        a_fd_err_rel.append(int_fd_err_rel)
+                        if save_all:
+                            a_eta_err_rel.append(int_eta_err_rel)
+                            a_v_err_rel.append(int_v_err_rel)
+                    else:
+                        a_fd_err_abs.append(int_fd_err_abs)
+                        if save_all:
+                            a_eta_err_abs.append(int_eta_err_abs)
+                            a_v_err_abs.append(int_v_err_abs)
+
+                # collect results for each value of SNR 
+                if relative:
+                    fd_error_rel.append(a_fd_err_rel)
+                    if save_all:
+                        eta_error_rel.append(a_eta_err_rel)
+                        v_error_rel.append(a_v_err_rel)
+                else:
+                    fd_error_abs.append(a_fd_err_abs)
+                    if save_all:
+                        eta_error_abs.append(a_eta_err_abs)
+                        v_error_abs.append(a_v_err_abs)
+
+            # collect the total final results
+            if relative:
+                tot_fd_error_rel.append(fd_error_rel)
+                if save_all:
+                    tot_eta_error_rel.append(eta_error_rel)
+                    tot_v_error_rel.append(v_error_rel)
+            else:
+                
+                tot_fd_error_abs.append(fd_error_abs)
+                if save_all:
+                    tot_eta_error_abs.append(eta_error_abs)
+                    tot_v_error_abs.append(v_error_abs)
+
+        if save:
+            if relative:
+                tot_fd_error_rel = np.stack(tot_fd_error_rel)
+                if save_all:
+                    tot_eta_error_rel = np.stack(tot_eta_error_rel)
+                    tot_v_error_rel = np.stack(tot_v_error_rel)
+            else:
+                tot_fd_error_abs = np.stack(tot_fd_error_abs)
+                if save_all: 
+                    tot_eta_error_abs = np.stack(tot_eta_error_abs)
+                    tot_v_error_abs = np.stack(tot_v_error_abs)
+            if self.l==0.005:
+                if relative:
+                    np.save(path+'fd_rel_fc60.npy',tot_fd_error_rel)
+                    if save_all:
+                        np.save(path+'eta_rel_fc60.npy',tot_eta_error_rel)
+                        np.save(path+'v_rel_fc60.npy',tot_v_error_rel)
+                else:
+                    np.save(path+'fd_abs_fc60.npy',tot_fd_error_rel)
+                    if save_all:
+                        np.save(path+'eta_abs_fc60.npy',tot_eta_error_abs)
+                        np.save(path+'v_abs_fc60.npy',tot_v_error_abs)
+            elif self.l==0.0107:
+                if relative:
+                    np.save(path+'fd_rel_fc28.npy',tot_fd_error_rel)
+                    if save_all:
+                        np.save(path+'eta_rel_fc28.npy',tot_eta_error_rel)
+                        np.save(path+'v_rel_fc28.npy',tot_v_error_rel)
+                else:
+                    np.save(path+'fd_abs_fc28.npy',tot_fd_error_abs)
+                    if save_all:
+                        np.save(path+'eta_abs_fc28.npy',tot_eta_error_abs)
+                        np.save(path+'v_abs_fc28.npy',tot_v_error_abs)
+            elif self.l==0.06:
+                if relative:
+                    np.save(path+'fd_rel_fc5.npy',tot_fd_error_rel)
+                    if save_all:
+                        np.save(path+'eta_rel_fc5.npy',tot_eta_error_rel)
+                        np.save(path+'v_rel_fc5.npy',tot_v_error_rel)
+                else:
+                    np.save(path+'fd_abs_fc5.npy',tot_fd_error_abs)
+                    if save_all:
+                        np.save(path+'eta_abs_fc5.npy',tot_eta_error_abs)
+                        np.save(path+'v_abs_fc5.npy',tot_v_error_abs)
+            f = open(path + 'info.txt', 'w')
+            f.write('numbers of static paths: ' + str(self.n_static_list) + '\n')
+            f.write('interval lengths: ' + str(self.interval_list) + '\n')
+            f.write('AoA std: ' + str(aoa) + '\n')
+            f.write('SNR values: ' + str(self.snr_list) + '\n')
+            f.write('number of iterations: ' + str(N))
+            f.close()
+
+        return tot_fd_error_rel
+    
+if __name__=='__main__':
+    d_est = DopplerEst(l=0.005, n_static=[2,4], snr=[0,20], interval=[48,2])
+    err = d_est.simulation(path='cir_estimation_sim/data/test/', N=10, aoa=[5], save_all=True)
+    print(np.mean(err, axis=0))
