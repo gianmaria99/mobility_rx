@@ -9,20 +9,24 @@
   \begin{axis}
     [
     boxplot/draw direction=y,
-    ylabel={$\mathcal{E}_{f_D}$},
-    xlabel={SNR, $\Lambda$ [dB]},
-    ymin=-0.011, ymax=0.7,
-    ytick distance =0.1,
+    ylabel={Error $\varepsilon_{f_{\rm D, t}}$},
+    xlabel={No. static paths $S$},
+    ylabel shift=-5 pt,
+    ymin=-0.011, ymax=0.12,
+    ytick={0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5},
+    yticklabels={$0$,$0.05$,$0.1$,,$0.2$,,$0.3$,,$0.4$,,$0.5$},
     yticklabel style = {/pgf/number format/fixed},
     cycle list={{purple1194288},{brown1814888},{indianred21811088}},
     xtick={1,2,3,4},
     ymajorgrids,
-    xticklabels={$0$, $5$, $10$, $15$},
+    xticklabels={$2$, $4$, $6$, $8$},
     %legend style={at={(0.97,0.97)}, anchor=north east, legend cell align=left, align=left, draw=white!15!black},
-    xlabel style={font=\normalsize}, ylabel style={font=\normalsize}, ticklabel style={font=\normalsize},
+    xlabel style={font=\footnotesize}, ylabel style={font=\footnotesize}, ticklabel style={font=\footnotesize},
     /pgfplots/boxplot/box extend=0.25,
     height=3.5cm,
-    width=6cm,
+    width=5.5cm,
+    xmin=0.25,
+    xmax=4.75
     % clip=false
     ]
 	\addplot+[
@@ -40,11 +44,11 @@
 	\addplot+[
 	fill, draw=black,
 	boxplot prepared={
-		median=0.00718534133437517,
-		upper quartile=0.013478554601113,
-		lower quartile=0.00323080572839677,
-		upper whisker=0.0288460405436409,
-		lower whisker=3.72488731602181e-06,
+		median=0.00733784119686559,
+		upper quartile=0.0137428368966504,
+		lower quartile=0.00344754970346446,
+		upper whisker=0.0291520633842302,
+		lower whisker=1.38112998380356e-06,
 		draw position=1
 	},
 	] coordinates {};
@@ -52,11 +56,11 @@
 	\addplot+[
 	fill, draw=black,
 	boxplot prepared={
-		median=0.014684166167723,
-		upper quartile=0.026866172436961,
-		lower quartile=0.00670776891292069,
-		upper whisker=0.0570909217257234,
-		lower whisker=5.4908094742307e-07,
+		median=0.016977994948904,
+		upper quartile=0.0329647487231875,
+		lower quartile=0.00783072149446672,
+		upper whisker=0.0706054166323989,
+		lower whisker=3.33504971584064e-07,
 		draw position=1.3
 	},
 	] coordinates {};
@@ -76,11 +80,11 @@
 	\addplot+[
 	fill, draw=black,
 	boxplot prepared={
-		median=0.00604477304461719,
-		upper quartile=0.0107396339509796,
-		lower quartile=0.00284749442855798,
-		upper whisker=0.0225597495642557,
-		lower whisker=3.96121045367817e-06,
+		median=0.0061336888857957,
+		upper quartile=0.0111133906945648,
+		lower quartile=0.00284311816329238,
+		upper whisker=0.023517866765627,
+		lower whisker=2.34357281437541e-07,
 		draw position=2
 	},
 	] coordinates {};
@@ -88,11 +92,11 @@
 	\addplot+[
 	fill, draw=black,
 	boxplot prepared={
-		median=0.0122240758121243,
-		upper quartile=0.0218262751966194,
-		lower quartile=0.00564728901485796,
-		upper whisker=0.046081459658168,
-		lower whisker=2.69779372195922e-06,
+		median=0.0100797364309838,
+		upper quartile=0.0182318646412066,
+		lower quartile=0.00468851342736441,
+		upper whisker=0.0385173060605181,
+		lower whisker=6.23435611459509e-07,
 		draw position=2.3
 	},
 	] coordinates {};
@@ -112,11 +116,11 @@
 	\addplot+[
 	fill, draw=black,
 	boxplot prepared={
-		median=0.00572474218285914,
-		upper quartile=0.0101082957792132,
-		lower quartile=0.00260308700253941,
-		upper whisker=0.0213631462133561,
-		lower whisker=4.22497369457338e-06,
+		median=0.00569046308619513,
+		upper quartile=0.0102962275369846,
+		lower quartile=0.00265456973440475,
+		upper whisker=0.0217274539554386,
+		lower whisker=2.91571196443014e-07,
 		draw position=3
 	},
 	] coordinates {};
@@ -124,11 +128,11 @@
 	\addplot+[
 	fill, draw=black,
 	boxplot prepared={
-		median=0.0114722664811631,
-		upper quartile=0.0203068666023567,
-		lower quartile=0.0053815628044971,
-		upper whisker=0.0426817464653587,
-		lower whisker=6.69389181668977e-07,
+		median=0.0077384331834038,
+		upper quartile=0.0131309788825977,
+		lower quartile=0.00359464710581954,
+		upper whisker=0.0274191364170467,
+		lower whisker=1.46164784169336e-06,
 		draw position=3.3
 	},
 	] coordinates {};
@@ -148,11 +152,11 @@
 	\addplot+[
 	fill, draw=black,
 	boxplot prepared={
-		median=0.00555226176555184,
-		upper quartile=0.00982364296308686,
-		lower quartile=0.00252441976322741,
-		upper whisker=0.020772407587506,
-		lower whisker=1.61479239101089e-06,
+		median=0.00563552691558994,
+		upper quartile=0.0101589191372114,
+		lower quartile=0.00260606729013221,
+		upper whisker=0.0214775758346174,
+		lower whisker=1.75644824250748e-06,
 		draw position=4
 	},
 	] coordinates {};
@@ -160,11 +164,11 @@
 	\addplot+[
 	fill, draw=black,
 	boxplot prepared={
-		median=0.0112653129338285,
-		upper quartile=0.0197290191729359,
-		lower quartile=0.0051512630983051,
-		upper whisker=0.0415464821979729,
-		lower whisker=5.62320249094955e-07,
+		median=0.00662655393941756,
+		upper quartile=0.0115637270028665,
+		lower quartile=0.0031063017144766,
+		upper whisker=0.0242438155290753,
+		lower whisker=4.72100065197834e-07,
 		draw position=4.3
 	},
 	] coordinates {};

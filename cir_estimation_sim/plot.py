@@ -26,7 +26,7 @@ def load_data(path, speed=False):
     if not speed:
         data = []
         for f in files:
-            if f=='eta' or f=='speed' or f=='time':
+            if f=='eta' or f=='speed' or f=='time' or f.startswith('tot') or f.startswith('old'):
                 continue
             info = f.split('_')
             data.append(
@@ -74,8 +74,8 @@ def plot_fd():
     #labels = [25,50,100,200,400]
     #labels = [12,24,48,96,192,288]
     #labels = [-5,0,10,20,30]
-    labels = [2,4,6,8,10]
-    fcs = [5,28,60]
+    labels = [2,4,6,8]
+    fcs = [5,28]
     for fc in fcs:
         errors = []
         for s in labels:
@@ -143,7 +143,7 @@ def plot_eta():
 def plot_npath():
     path = 'cir_estimation_sim/data/varying_npath'
     labels = [2,4,6,8]
-    fcs = [60,28,5]
+    fcs = [28,5]
     for fc in fcs:
         data = np.load(path+'/tot_5_fd_error_fc%s.npy'%(fc))
         print('\nfc= ' + str(fc))
@@ -153,7 +153,7 @@ def plot_npath():
 def plot_interval():
     path = 'cir_estimation_sim/data/varying_interval'
     labels = [48,32,16,8,4,2]
-    fcs = [60,28,5]
+    fcs = [28,5]
     for fc in fcs:
         data = np.load(path+'/fd_snr5_fc%s_ns2.npy'%(fc))
         print('\nfc= ' + str(fc))
@@ -186,4 +186,4 @@ def plot_snr():
             plot_boxplot('cir_estimation_sim/plot/',data[:,:,i],'SNR [dB]','fD relative error',np.array(labels),'varying snr AoA=%s°, fc=%s GHz' %(aoa[i],fc),'var_snrfc_%sa_%s' %(fc,aoa[i]))
             
 
-plot_eta()
+plot_fd()

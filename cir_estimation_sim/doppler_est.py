@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import least_squares
 import time
+import utils
 
 class DopplerEst(ChannelModel):
 
@@ -16,7 +17,7 @@ class DopplerEst(ChannelModel):
             snr: list of SNR values [dB],
             interval: list of interval values [ms].
         """
-        super().__init__(l=l, n_static=n_static[-1], snr=snr[-1])
+        super().__init__(l=l, n_static=n_static[-1], snr=snr[-1]) 
         self.snr_list = snr
         self.n_static_list = n_static
         self.interval_list = interval
@@ -137,14 +138,14 @@ class DopplerEst(ChannelModel):
         interval = int(interval*1e-3/self.T)
         phase_diff = []
         self.k = 0
-        h = self.get_cir_est(init=True, k=self.k)
+        h = self.get_cir_est(init=True)
         self.get_phases(h, init=True)
         for p in range(1,len(self.phases[:,1])):
                 self.phases[p,1] = self.phases[p,1] - self.phases[0,1]
         AoA = []#[self.paths['AoA'][1:] + np.random.normal(0,self.AoAstd,self.n_static+1)]
         for i in range(1,interval):
             self.k = i
-            h = self.get_cir_est(init=False, k=self.k)
+            h = self.get_cir_est(init=False)
             self.get_phases(h,plot=False)
             ### remove LoS from other paths ###
             for p in range(1,len(self.phases[:,1])):
@@ -189,6 +190,7 @@ class DopplerEst(ChannelModel):
             fd_error_abs = []
             eta_error_abs = []
             v_error_abs = []
+            self.get_positions(self.x_max,self.y_max,plot=False)
             for s in self.snr_list:
                 self.SNR = s
                 a_fd_err_rel = []
@@ -355,8 +357,18 @@ class DopplerEst(ChannelModel):
             f.close()
 
         return tot_fd_error_rel
-    
+                  
 if __name__=='__main__':
-    d_est = DopplerEst(l=0.005, n_static=[2,4], snr=[0,20], interval=[48,2])
-    err = d_est.simulation(path='cir_estimation_sim/data/test/', N=10, aoa=[5], save_all=True)
+    ### parameters ###
+    fc = 5 # 5 or 28 or 60 GHz
+    l = 3e8/(fc*1e9) # check for 28
+    n_static = [2]
+    snr=[5,10,20]
+    interval=[16]
+    aoa=[5]
+    ##################
+    d_est = DopplerEst(l, n_static, snr, interval)
+    err = d_est.simulation(path='cir_estimation_sim/data/test/', N=1000, aoa=aoa, save_all=True)
     print(np.mean(err, axis=0))
+    utils.print_error('cir_estimation_sim/data/test/',fc)
+    utils.plot('cir_estimation_sim/data/test/', fc, snr=snr, aoa=aoa, interval=interval, n_static=n_static, save=True)

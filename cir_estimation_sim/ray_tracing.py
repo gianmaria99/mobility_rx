@@ -251,12 +251,11 @@ class RayTracing():
         for i in range(1,len(self.paths['gain'])):
             self.paths['gain'][i] = self.radar_eq(self.positions[i+1]) * np.exp(1j * np.random.uniform(0,2*np.pi))
     
-    def compute_cir(self, init, k, plot=False):
+    def compute_cir(self, init, plot=False):
         """
             Computes channel impulse response.
             init: if it is the first cir sample compute phases and attenuations.
         """
-        self.get_positions(self.x_max, self.y_max)
         if self.l==0.005:
             up_cir = np.zeros(256*self.us).astype(complex)
             cir = np.zeros(256).astype(complex)
@@ -269,8 +268,8 @@ class RayTracing():
         delays = np.floor(self.paths['delay']*self.B)
         for i,d in enumerate(delays.astype(int)):
             if self.l==0.005:
-                up_cir[d*self.us] = up_cir[d*self.us] + self.paths['gain'][i] * np.exp(1j * 2 * np.pi * self.T * k * self.paths['phase'][i])
-            cir[d] = cir[d] + self.paths['gain'][i] * np.exp(1j * 2 * np.pi * self.T * k * self.paths['phase'][i])
+                up_cir[d*self.us] = up_cir[d*self.us] + self.paths['gain'][i] * np.exp(1j * 2 * np.pi * self.T * self.k * self.paths['phase'][i])
+            cir[d] = cir[d] + self.paths['gain'][i] * np.exp(1j * 2 * np.pi * self.T * self.k * self.paths['phase'][i])
         assert np.count_nonzero(cir)==len(self.paths['delay']) # check that all paths are separable
         if plot:
             if self.l==0.005:
@@ -290,4 +289,4 @@ class RayTracing():
         
 if __name__=='__main__':
     rt = RayTracing(l=0.06, n_static=2)
-    rt.compute_cir(init=True,k=1,plot=True)
+    rt.compute_cir(init=True, plot=True)

@@ -194,13 +194,13 @@ class ChannelModel(RayTracing):
         noise = self.gen_noise(len(Y))
         return Y + noise
     
-    def add_cfo(self, signal, k):
+    def add_cfo(self, signal):
         """
             Returns the signal after adding the channel frequency offset shift.
             signal: signal (cir estimate).
         """
-        self.f_off += np.random.normal(0,self.std_w)
-        return signal * np.exp(1j*2*np.pi*self.f_off*k*self.T)       
+        self.f_off = np.random.normal(0,self.std_w)
+        return signal * np.exp(1j*2*np.pi*self.f_off*self.k*self.T)       
     
     def add_po(self, signal):
         """
@@ -209,9 +209,10 @@ class ChannelModel(RayTracing):
         """
         return signal * np.exp(1j*np.random.normal(0,self.std_w))
     
-    def get_cir_est(self, init, k):
-        self.get_positions(self.x_max,self.y_max,plot=False)
-        self.compute_cir(init=init, k=k, plot=False)
+    def get_cir_est(self, init):
+        if init:
+            self.k=0
+        self.compute_cir(init=init, plot=False)
         if self.l==0.005:
             up_rx_signal = self.get_rxsignal(plot=False)
             self.sampling(up_rx_signal,plot=False)
@@ -220,9 +221,90 @@ class ChannelModel(RayTracing):
             Y = self.get_rx_ofdm(self.tx_signal)
             h = self.estimate_ofdm_CIR(Y, plot=False)
         ### add cfo ###
-        h = self.add_po(self.add_cfo(h, k=k))
+        h = self.add_po(self.add_cfo(h))
         return h
+    
+
+    ########## just for debug
+    
+    def get_phases(self, h, init=False, from_index= True, plot=False):
+        """
+            Returns cir phases [LoS,t,s1,...,sn_static].
+            h: cir,
+            from_index: if True use the correct index to locate peaks, else performs peak detection,
+            plot: wether to plot the selected paths from the given cir.
+        """
+        if from_index:
+            ind = np.floor(self.paths['delay']*self.B).astype(int) # from paths delay
+        else:
+            ind = np.argsort(np.abs(h))[-len(self.paths['delay']):] # from cir peaks
+        phases = np.angle(h[ind])
+        if init:
+            self.phases = np.zeros((self.n_static+2,2))
+        self.phases[:,0] = self.phases[:,1]
+        self.phases[:,1] = phases
+        if plot:
+            t = np.zeros(len(h))
+            t[ind] = np.abs(h[ind])
+            plt.stem(np.abs(self.cir), label='real')
+            plt.stem(t, markerfmt='gD', label='selected paths')
+            plt.grid()
+            plt.legend()
+            plt.show()
+        return phases 
+    
+    def my_mod_2pi(self, phases):
+        """
+            Maps an array or a matrix of angles [rad] in [-pi,pi].
+            phases: measured phases.
+
+            returns phases mapped in [-pi,pi].
+        """
+        if phases.ndim==2:
+            for j in range(phases.shape[1]):
+                for i,p in enumerate(phases[:,j]):
+                    while p <-np.pi:
+                        p = p+2*np.pi
+                    while p>np.pi:
+                        p = p-2*np.pi
+                    phases[i,j]=p
+        elif phases.ndim==1:
+            for i,p in enumerate(phases):
+                    while p <-np.pi:
+                        p = p+2*np.pi
+                    while p>np.pi:
+                        p = p-2*np.pi
+                    phases[i]=p
+        else:
+            raise Exception("phases number of dimensions must be <= 2.")
+        return phases
 
 if __name__=='__main__':
-    ch = ChannelModel(l=0.005, n_static=2, snr=10)
-    ch.get_cir_est(init=True, k=1)
+    ch = ChannelModel(l=0.005, n_static=2, snr=100)
+    interval = 48
+    interval = int(interval*1e-3/ch.T)
+    phase_diff = []
+    k = 0
+    ch.get_positions(ch.x_max,ch.y_max,plot=False)
+    h = ch.get_cir_est(init=True)
+    ch.get_phases(h, init=True)
+    for p in range(1,len(ch.phases[:,1])):
+            ch.phases[p,1] = ch.phases[p,1] - ch.phases[0,1]
+    AoA = []#[ch.paths['AoA'][1:] + np.random.normal(0,ch.AoAstd,ch.n_static+1)]
+    for i in range(1,interval):
+        ch.k = i
+        h = ch.get_cir_est(init=False)
+        ch.get_phases(h,plot=False)
+        ### remove LoS from other paths ###
+        for p in range(1,len(ch.phases[:,1])):
+            ch.phases[p,1] = ch.phases[p,1] - ch.phases[0,1]
+        ### phase difference ###
+        diff = ch.phases[:,1] - ch.phases[:,0]
+        phase_diff.append(diff)
+        ### collect noisy AoA measurements ###
+        #AoA.append(ch.paths['AoA'][1:] + np.random.normal(0,ch.AoAstd,ch.n_static+1))
+
+    phase_diff = np.stack(phase_diff, axis=0)
+    phase_diff = ch.my_mod_2pi(phase_diff)
+    #AoA = np.stack(AoA,axis=0)
+    a = 0

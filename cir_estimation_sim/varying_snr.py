@@ -820,7 +820,7 @@ class channel_sim():
 if __name__=='__main__':
 
     interval = 16 # interval expressed in [ms]
-    for fc in [60]:
+    for fc in [28]:
         if fc==28:
             npath_error = np.load('cir_estimation_sim/data/varying_snr/fd_k89_fc28_ns2.npy')
             vmax = 10
@@ -837,7 +837,7 @@ if __name__=='__main__':
             s = 20    
         ch_sim = channel_sim(vmax=vmax, SNR=None, l=l)
         i = int(interval*1e-3/ch_sim.T)
-        npath_error = ch_sim.simulation(x_max=s,y_max=s,N=1000,interval=i,path='cir_estimation_sim/data/varying_snr/',save=False,save_all=False)
+        npath_error = ch_sim.simulation(x_max=s,y_max=s,N=100,interval=i,path='cir_estimation_sim/data/varying_snr/',save=False,save_all=False)
         npath_error = np.stack(npath_error,axis=0)
         # err_eta = np.load('cir_estimation_sim/data/varying_snr/eta/eta_abs_k%s_fc%s_ns2.npy'%(i,fc))
         # err_speed = np.load('cir_estimation_sim/data/varying_snr/speed/v_abs_k%s_fc%s_ns2.npy'%(i,fc))

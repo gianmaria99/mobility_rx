@@ -9,21 +9,24 @@
   \begin{axis}
     [
     boxplot/draw direction=y,
-    ylabel={$\mathcal{E}_{f_D}$},
-    xlabel={SNR, $\Lambda$ [dB]},
-    ymin=-0.011, ymax=0.7,
-    ytick distance =0.1,
+    ylabel={Error $\varepsilon_{f_{\rm D, t}}$},
+    ylabel shift = -5 pt,
+    xlabel={SNR [dB]},
+    ymin=-0.011, ymax=0.12,
+    ytick={0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5},
+    yticklabels={$0$,$0.05$,$0.1$,,$0.2$,,$0.3$,,$0.4$,,$0.5$},
     yticklabel style = {/pgf/number format/fixed},
+    % yticklabel=\empty,
     cycle list={{purple1194288},{brown1814888},{indianred21811088}},
-    xtick={1,2,3,4},
+    xtick={2,3,4,5},
     ymajorgrids,
-    xticklabels={$0$, $5$, $10$, $15$},
+    xticklabels={$0$, $5$, $10$, $20$},
     %legend style={at={(0.97,0.97)}, anchor=north east, legend cell align=left, align=left, draw=white!15!black},
-    xlabel style={font=\normalsize}, ylabel style={font=\normalsize}, ticklabel style={font=\normalsize},
+    xlabel style={font=\footnotesize}, ylabel style={font=\footnotesize}, ticklabel style={font=\footnotesize},
     /pgfplots/boxplot/box extend=0.25,
     height=3.5cm,
-    width=6cm,
-    % clip=false
+    width=5.5cm,
+    %clip=false
     ]
 	% \addplot+[
 	% fill, draw=black,

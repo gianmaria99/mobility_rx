@@ -4,6 +4,7 @@
 /data
 /cir_estimation_sim/data
 /drawings
+/letter
 __pycache__
 .vscode
 *.asv

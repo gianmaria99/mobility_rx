@@ -55,4 +55,4 @@ def tikz_boxplot(input_file, name, n_box):
     f_w.write('\\end{tikzpicture}')
     f_w.close()
 
-tikz_boxplot('cir_estimation_sim/plot/rel_var_snr_eta_fc_60a_5.tex','cir_estimation_sim/plot/var_snr_releta.tex',4)
+tikz_boxplot('cir_estimation_sim/plot/var_interfc_5.tex','cir_estimation_sim/plot/var_interval.tex',6)
